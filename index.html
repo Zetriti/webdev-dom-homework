@@ -44,12 +44,25 @@
           isLiked: true
         }
       ]
-      
+
+      function replyСomment(){
+        const comments = document.querySelectorAll('.comment');
+
+        comments.forEach(comment => {
+          comment.addEventListener("click", function() {
+            console.log('gdfgdf');
+            const textToInsert = this.dataset.text;
+            textInput.value = textToInsert;
+          });
+        });
+      };
+
       const initLikeComments = () =>{
         const commentsLikeButtons = document.querySelectorAll('.like-button');
         
         for (const commentLikeButton of commentsLikeButtons){
-          commentLikeButton.addEventListener("click", () => {
+          commentLikeButton.addEventListener("click", (event) => {
+            event.stopPropagation();
             const index = commentLikeButton.dataset.index;
 
             if (comments[index].isLiked) {
@@ -59,17 +72,18 @@
               comments[index].isLiked = true;
               comments[index].likes++;
             }
-  
+            
             renderComments();
+            
           });
-        }
+        };
       };
-
+        
       const renderComments = () => {
         const commentsHtml = comments.map((comment, index)=> {
           const likeButtonClass = comment.isLiked ? 'like-button -active-like' : 'like-button';
 
-          return `<li class="comment">
+          return `<li class="comment" data-text="${comment.name}  писал(а):\n\u00AB${comment.text}\u00BB\n\nКомментарий:">
                     <div class="comment-header">
                       <div>${comment.name}</div>
                       <div>${comment.date}</div>
@@ -91,6 +105,7 @@
         commentsList.innerHTML = commentsHtml;
 
         initLikeComments();
+        replyСomment();
       }
 
       renderComments();
@@ -116,15 +131,24 @@
         
         return name.trim() !== '' && text.trim() !== '';
       };
-    
+      
+      function escapeHtml(text) {
+        return text
+          .replaceAll('&', '&amp;')   
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#039;');
+      };
+
       function addComment() {
         if (!isFormValid()) {
           alert('Пожалуйста, заполните все поля');
           return;
         }
         
-        const name = nameInput.value;
-        const text = textInput.value;
+        const name = escapeHtml(nameInput.value);
+        const text = escapeHtml(textInput.value);
         const currentDate = new Date();
         const dateString = formatDate(currentDate);
         comments.push({name: name, date: dateString, text: text, likes: 0, isLiked: false});
