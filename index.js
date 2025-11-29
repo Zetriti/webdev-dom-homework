@@ -1,6 +1,9 @@
 import { renderComments } from './modules/renderComments.js'
+import { initCommentHandlers } from './modules/addComment.js'
+import { fetchComments } from './modules/comments.js'
 
-import { sendСomment } from './modules/addComment.js'
+fetchComments().then(() => {
+    renderComments()
+})
 
-renderComments()
-sendСomment()
+initCommentHandlers()

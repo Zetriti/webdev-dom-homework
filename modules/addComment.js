@@ -1,6 +1,5 @@
-import { formatDate } from './formatDate.js'
-import { comments } from './comments.js'
 import { renderComments } from './renderComments.js'
+import { fetchComments } from './comments.js'
 
 const addButton = document.querySelector('.add-form-button')
 const nameInput = document.querySelector('.add-form-name')
@@ -12,10 +11,9 @@ function clearForm() {
 }
 
 function isFormValid() {
-    const name = nameInput.value
-    const text = textInput.value
-
-    return name.trim() !== '' && text.trim() !== ''
+    const name = nameInput.value.trim()
+    const text = textInput.value.trim()
+    return name.length >= 3 && text.length >= 3
 }
 
 function escapeHtml(text) {
@@ -27,36 +25,44 @@ function escapeHtml(text) {
         .replaceAll("'", '&#039;')
 }
 
-function addComment() {
+function sendCommentToServer() {
     if (!isFormValid()) {
-        alert('Пожалуйста, заполните все поля')
+        alert('Имя и комментарий должны содержать хотя бы 3 символа')
         return
     }
 
     const name = escapeHtml(nameInput.value)
     const text = escapeHtml(textInput.value)
-    const currentDate = new Date()
-    const dateString = formatDate(currentDate)
-    comments.push({
-        name: name,
-        date: dateString,
+
+    const newComment = {
         text: text,
-        likes: 0,
-        isLiked: false,
+        name: name,
+    }
+
+    fetch('https://wedev-api.sky.pro/api/v1/dmitry-gerasimov/comments', {
+        method: 'POST',
+        body: JSON.stringify(newComment),
     })
-    renderComments()
-    clearForm()
+        .then((response) => {
+            return response.json()
+        })
+        .then(() => {
+            return fetchComments()
+        })
+        .then(() => {
+            renderComments()
+            clearForm()
+        })
 }
 
-export function sendСomment() {
-    addButton.addEventListener('click', addComment)
+export function initCommentHandlers() {
+    addButton.addEventListener('click', sendCommentToServer)
 
     textInput.addEventListener('keydown', function (event) {
         if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
-            addComment()
+            sendCommentToServer()
         }
     })
 }
-sendСomment()
 
 console.log('It works!')
