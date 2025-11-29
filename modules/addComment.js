@@ -1,6 +1,7 @@
 import { renderComments } from './renderComments.js'
 import { fetchComments } from './comments.js'
 
+const addForm = document.querySelector('.add-form')
 const addButton = document.querySelector('.add-form-button')
 const nameInput = document.querySelector('.add-form-name')
 const textInput = document.querySelector('.add-form-text')
@@ -25,6 +26,23 @@ function escapeHtml(text) {
         .replaceAll("'", '&#039;')
 }
 
+function loadingComments(loading) {
+    if (loading) {
+        addForm.style.display = 'none'
+        const uploadingComment = document.createElement('div')
+        uploadingComment.id = 'uploadingNewComment'
+        uploadingComment.innerHTML = ` 
+        <div class="uploadingText">
+            <p>Комментарий добавляется...</p>
+        </div> `
+        addForm.parentNode.insertBefore(uploadingComment, addForm.nextSibling)
+    } else {
+        addForm.style.display = 'flex'
+        const uploadingComment = document.getElementById('uploadingNewComment')
+        uploadingComment.remove()
+    }
+}
+
 function sendCommentToServer() {
     if (!isFormValid()) {
         alert('Имя и комментарий должны содержать хотя бы 3 символа')
@@ -39,6 +57,8 @@ function sendCommentToServer() {
         name: name,
     }
 
+    loadingComments(true)
+
     fetch('https://wedev-api.sky.pro/api/v1/dmitry-gerasimov/comments', {
         method: 'POST',
         body: JSON.stringify(newComment),
@@ -52,6 +72,7 @@ function sendCommentToServer() {
         .then(() => {
             renderComments()
             clearForm()
+            loadingComments(false)
         })
 }
 
