@@ -11,12 +11,6 @@ function clearForm() {
     textInput.value = ''
 }
 
-function isFormValid() {
-    const name = nameInput.value.trim()
-    const text = textInput.value.trim()
-    return name.length >= 3 && text.length >= 3
-}
-
 function escapeHtml(text) {
     return text
         .replaceAll('&', '&amp;')
@@ -44,17 +38,13 @@ function loadingComments(loading) {
 }
 
 function sendCommentToServer() {
-    if (!isFormValid()) {
-        alert('Имя и комментарий должны содержать хотя бы 3 символа')
-        return
-    }
-
     const name = escapeHtml(nameInput.value)
     const text = escapeHtml(textInput.value)
 
     const newComment = {
         text: text,
         name: name,
+        forceError: true,
     }
 
     loadingComments(true)
@@ -64,6 +54,19 @@ function sendCommentToServer() {
         body: JSON.stringify(newComment),
     })
         .then((response) => {
+            if (!response.ok) {
+                if (response.status === 400) {
+                    return response.json().then((errorData) => {
+                        throw new Error(
+                            errorData.error || 'Некорректные данные',
+                        )
+                    })
+                } else if (response.status === 500) {
+                    throw new Error('Сервер сломался, попробуй позже')
+                } else {
+                    throw new Error('Ошибка сервера: ' + response.status)
+                }
+            }
             return response.json()
         })
         .then(() => {
@@ -72,6 +75,23 @@ function sendCommentToServer() {
         .then(() => {
             renderComments()
             clearForm()
+            loadingComments(false)
+        })
+        .catch((error) => {
+            if (error.message === 'Сервер сломался, попробуй позже') {
+                alert('Сервер сломался, попробуй позже')
+                setTimeout(sendCommentToServer, 0)
+                return
+            } else if (
+                error.name === 'TypeError' &&
+                error.message === 'Failed to fetch'
+            ) {
+                alert('Кажется, у вас сломался интернет, попробуйте позже')
+            } else {
+                alert(error.message || 'Ошибка при отправке комментария')
+            }
+        })
+        .finally(() => {
             loadingComments(false)
         })
 }

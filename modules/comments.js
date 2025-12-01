@@ -9,10 +9,28 @@ export const fetchComments = () => {
         method: 'GET',
     })
         .then((response) => {
+            if (!response.ok) {
+                if (response.status === 500) {
+                    throw new Error('Сервер сломался, попробуй позже')
+                } else {
+                    throw new Error('Ошибка загрузки: ' + response.status)
+                }
+            }
             return response.json()
         })
         .then((data) => {
             updateComments(data.comments)
             return data.comments
+        })
+        .catch((error) => {
+            if (
+                error.name === 'TypeError' &&
+                error.message === 'Failed to fetch'
+            ) {
+                throw new Error(
+                    'Кажется, у вас сломался интернет, попробуйте позже',
+                )
+            }
+            throw error
         })
 }

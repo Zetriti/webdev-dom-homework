@@ -21,9 +21,24 @@ function hideLoadingIndicator() {
 
 showLoadingIndicator()
 
-fetchComments().then(() => {
-    renderComments()
-    hideLoadingIndicator()
-})
+fetchComments()
+    .then(() => {
+        renderComments()
+        hideLoadingIndicator()
+    })
+    .catch((error) => {
+        if (
+            error.name === 'NetworkError' ||
+            error.message === 'Failed to fetch'
+        ) {
+            alert('Кажется, у вас сломался интернет, попробуйте позже')
+        } else if (error.message === 'Сервер сломался, попробуй позже') {
+            alert('Сервер сломался, попробуй позже')
+        } else {
+            alert(
+                'Не удалось загрузить комментарии. Пожалуйста, попробуйте позже.',
+            )
+        }
+    })
 
 initCommentHandlers()
