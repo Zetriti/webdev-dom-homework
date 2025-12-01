@@ -1,0 +1,153 @@
+'use strict'
+
+const addForm = document.querySelector('.add-form')
+const nameInput = document.querySelector('.add-form-name')
+const textInput = document.querySelector('.add-form-text')
+const addButton = document.querySelector('.add-form-button')
+const commentsList = document.querySelector('.comments')
+
+const comments = [
+    {
+        name: 'Глеб Фокин',
+        date: '12.02.22 12:18',
+        text: 'Это будет первый комментарий на этой странице',
+        likes: 3,
+        isLiked: false,
+    },
+    {
+        name: 'Варвара Н.',
+        date: '13.02.22 19:22',
+        text: 'Мне нравится как оформлена эта страница! ❤',
+        likes: 75,
+        isLiked: true,
+    },
+]
+
+function initReplyСomment() {
+    const comments = document.querySelectorAll('.comment')
+
+    comments.forEach((comment) => {
+        comment.addEventListener('click', function () {
+            const textToInsert = this.dataset.text
+            textInput.value = textToInsert
+        })
+    })
+}
+
+const initLikeComments = () => {
+    const commentsLikeButtons = document.querySelectorAll('.like-button')
+
+    for (const commentLikeButton of commentsLikeButtons) {
+        commentLikeButton.addEventListener('click', (event) => {
+            event.stopPropagation()
+            const index = commentLikeButton.dataset.index
+
+            if (comments[index].isLiked) {
+                comments[index].isLiked = false
+                comments[index].likes--
+            } else {
+                comments[index].isLiked = true
+                comments[index].likes++
+            }
+
+            renderComments()
+        })
+    }
+}
+
+const renderComments = () => {
+    const commentsHtml = comments
+        .map((comment, index) => {
+            const likeButtonClass = comment.isLiked
+                ? 'like-button -active-like'
+                : 'like-button'
+
+            return `<li class="comment" data-text="${comment.name}  писал(а):\n\u00AB${comment.text}\u00BB\n\nКомментарий:">
+                    <div class="comment-header">
+                      <div>${comment.name}</div>
+                      <div>${comment.date}</div>
+                    </div>
+                    <div class="comment-body">
+                      <div class="comment-text">
+                        ${comment.text}
+                      </div>
+                    </div>
+                    <div class="comment-footer">
+                      <div class="likes">
+                        <span class="likes-counter">${comment.likes}</span>
+                        <button data-index="${index}" = class="${likeButtonClass}"></button>
+                      </div>
+                    </div>
+                  </li>`
+        })
+        .join('')
+
+    commentsList.innerHTML = commentsHtml
+
+    initLikeComments()
+    initReplyСomment()
+}
+
+renderComments()
+
+function formatDate(date) {
+    const day = date.getDate().toString().padStart(2, '0')
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const year = date.getFullYear().toString().slice(-2)
+    const hours = date.getHours().toString().padStart(2, '0')
+    const minutes = date.getMinutes().toString().padStart(2, '0')
+
+    return `${day}.${month}.${year} ${hours}:${minutes}`
+}
+
+function clearForm() {
+    nameInput.value = ''
+    textInput.value = ''
+}
+
+function isFormValid() {
+    const name = nameInput.value
+    const text = textInput.value
+
+    return name.trim() !== '' && text.trim() !== ''
+}
+
+function escapeHtml(text) {
+    return text
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;')
+}
+
+function addComment() {
+    if (!isFormValid()) {
+        alert('Пожалуйста, заполните все поля')
+        return
+    }
+
+    const name = escapeHtml(nameInput.value)
+    const text = escapeHtml(textInput.value)
+    const currentDate = new Date()
+    const dateString = formatDate(currentDate)
+    comments.push({
+        name: name,
+        date: dateString,
+        text: text,
+        likes: 0,
+        isLiked: false,
+    })
+    renderComments()
+    clearForm()
+}
+
+addButton.addEventListener('click', addComment)
+
+textInput.addEventListener('keydown', function (event) {
+    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+        addComment()
+    }
+})
+
+console.log('It works!')
