@@ -1,26 +1,21 @@
 import { renderComments } from './renderComments.js'
 import { fetchComments } from './comments.js'
-
-const addForm = document.querySelector('.add-form')
-const addButton = document.querySelector('.add-form-button')
-const nameInput = document.querySelector('.add-form-name')
-const textInput = document.querySelector('.add-form-text')
+import { host } from './comments.js'
+import { token } from './comments.js'
 
 function clearForm() {
-    nameInput.value = ''
-    textInput.value = ''
-}
-
-function escapeHtml(text) {
-    return text
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;')
+    const nameInput = document.querySelector('.add-form-name')
+    const textInput = document.querySelector('.add-form-text')
+    if (nameInput && textInput) {
+        nameInput.value = ''
+        textInput.value = ''
+    }
 }
 
 function loadingComments(loading) {
+    const addForm = document.querySelector('.add-form')
+    if (!addForm) return
+
     if (loading) {
         addForm.style.display = 'none'
         const uploadingComment = document.createElement('div')
@@ -33,29 +28,43 @@ function loadingComments(loading) {
     } else {
         addForm.style.display = 'flex'
         const uploadingComment = document.getElementById('uploadingNewComment')
-        uploadingComment.remove()
+        if (uploadingComment) {
+            uploadingComment.remove()
+        }
     }
 }
 
 function sendCommentToServer() {
+    const nameInput = document.querySelector('.add-form-name')
+    const textInput = document.querySelector('.add-form-text')
+
+    if (!nameInput || !textInput) {
+        console.error('Элементы формы не найдены')
+        return
+    }
+
     const name = escapeHtml(nameInput.value)
     const text = escapeHtml(textInput.value)
 
     const newComment = {
         text: text,
         name: name,
-        forceError: true,
     }
 
     loadingComments(true)
 
-    fetch('https://wedev-api.sky.pro/api/v1/dmitry-gerasimov/comments', {
+    fetch(host + '/comments', {
         method: 'POST',
         body: JSON.stringify(newComment),
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
     })
         .then((response) => {
             if (!response.ok) {
-                if (response.status === 400) {
+                if (response.status === 401) {
+                    throw new Error('Нет авторизации')
+                } else if (response.status === 400) {
                     return response.json().then((errorData) => {
                         throw new Error(
                             errorData.error || 'Некорректные данные',
@@ -95,8 +104,25 @@ function sendCommentToServer() {
             loadingComments(false)
         })
 }
+function escapeHtml(text) {
+    return text
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;')
+}
 
 export function initCommentHandlers() {
+    const addButton = document.querySelector('.add-form-button')
+    const textInput = document.querySelector('.add-form-text')
+
+    if (!addButton || !textInput) {
+        console.error(
+            'Элементы формы не найдены для инициализации обработчиков',
+        )
+        return
+    }
     addButton.addEventListener('click', sendCommentToServer)
 
     textInput.addEventListener('keydown', function (event) {
